@@ -85,7 +85,45 @@ npm run dev
 - **Mobile PWA**: http://localhost:3000 (responsive design)
 - **API Documentation**: http://localhost:5000/api
 
-## 📱 Mobile PWA Installation
+## � Vercel Deployment
+
+### Backend API on Vercel
+
+1. In the `backend/` folder, install dependencies:
+
+```bash
+cd backend
+npm install
+```
+
+2. Deploy the backend using Vercel from the `backend/` directory.
+3. Configure Vercel environment variables:
+
+```env
+MONGODB_URI=<your-mongo-uri>
+JWT_SECRET=<your-jwt-secret>
+```
+
+4. After deployment, the backend API base URL will be:
+
+```text
+https://<your-vercel-backend-project>.vercel.app/api
+```
+
+### Frontend on Vercel
+
+1. In the `frontend/` folder, deploy the Next.js app to Vercel.
+2. Set the following Vercel environment variable for the frontend project:
+
+```env
+NEXT_PUBLIC_API_URL=https://<your-vercel-backend-project>.vercel.app/api
+```
+
+3. The frontend already consumes this value from `process.env.NEXT_PUBLIC_API_URL` in `frontend/src/lib/api.ts`.
+
+4. Your frontend will then call the deployed backend automatically.
+
+## �📱 Mobile PWA Installation
 
 1. Open the app in a mobile browser
 2. Tap "Add to Home Screen"
