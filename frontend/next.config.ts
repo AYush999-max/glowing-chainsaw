@@ -8,7 +8,15 @@ const withPWA = require('next-pwa')({
 
 const nextConfig: NextConfig = {
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '/api',
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://backend:5000/api/:path*',
+      },
+    ];
   },
   turbopack: {},
 };

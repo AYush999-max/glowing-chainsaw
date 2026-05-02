@@ -43,7 +43,7 @@ services:
     volumes:
       - ./backend/uploads:/app/uploads
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,7 +56,7 @@ services:
     container_name: glowing-chainsaw-frontend
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:5000/api
+      NEXT_PUBLIC_API_URL: /api
     ports:
       - "3000:3000"
     depends_on:

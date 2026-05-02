@@ -23,7 +23,7 @@ This will:
 
 ### Sample Account
 - **Email**: owner@demo.com
-- **Password**: password123
+- **Password**: password
 - **Role**: Owner (full access)
 
 ## 🐳 Manual Docker Setup

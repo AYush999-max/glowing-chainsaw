@@ -39,11 +39,11 @@ db.tenants.insertOne({
 // Insert sample owner user
 db.users.insertOne({
   email: "owner@demo.com",
-  password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password: "password123"
+  password: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password: "password"
   role: "owner",
   tenantId: db.tenants.findOne()._id,
   createdAt: new Date()
 });
 
 print("Database initialized with sample data!");
-print("Sample owner account: owner@demo.com / password123");
+print("Sample owner account: owner@demo.com / password");

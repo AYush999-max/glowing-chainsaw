@@ -30,12 +30,12 @@ router.post('/register', auth, authorize('owner', 'admin'), validate(schemas.use
 router.post('/login', validate(schemas.login), async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email }).populate('tenantId');
+    const user = await User.findOne({ email });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: user._id, role: user.role, tenantId: user.tenantId }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token, user: { id: user._id, email, role, tenantId: user.tenantId } });
+    res.json({ token, user: { id: user._id, email, role: user.role, tenantId: user.tenantId } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
