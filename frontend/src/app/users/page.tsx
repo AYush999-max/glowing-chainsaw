@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
-import { userAPI } from '@/lib/api';
+import { userAPI, tenantAPI } from '@/lib/api';
 import { UserPlus, Edit, Trash2 } from 'lucide-react';
 
 interface User {
@@ -14,9 +15,17 @@ interface User {
   createdAt: string;
 }
 
+interface TenantOption {
+  _id: string;
+  name: string;
+}
+
 export default function UsersPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [tenants, setTenants] = useState<TenantOption[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState<string>(user?.tenantId || '');
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,12 +36,45 @@ export default function UsersPage() {
   });
 
   useEffect(() => {
-    fetchUsers();
+    if (!user) return;
+
+    if (typeof window === 'undefined') return;
+    const queryTenantId = new URLSearchParams(window.location.search).get('tenantId');
+    if (user.role === 'owner' && queryTenantId) {
+      setSelectedTenantId(queryTenantId);
+    }
   }, [user]);
 
-  const fetchUsers = async () => {
+  useEffect(() => {
+    if (!user) return;
+
+    if (user.role === 'owner') {
+      fetchTenants();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (!selectedTenantId) return;
+
+    fetchUsers(selectedTenantId);
+  }, [user, selectedTenantId]);
+
+  const fetchTenants = async () => {
     try {
-      const response = await userAPI.getUsers(user!.tenantId);
+      const response = await tenantAPI.getTenants();
+      setTenants(response.data);
+      if (!selectedTenantId && response.data.length > 0) {
+        setSelectedTenantId(response.data[0]._id);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tenants:', error);
+    }
+  };
+
+  const fetchUsers = async (tenantId: string) => {
+    try {
+      const response = await userAPI.getUsers(tenantId);
       setUsers(response.data);
     } catch (error) {
       console.error('Failed to fetch users:', error);
@@ -44,10 +86,11 @@ export default function UsersPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await userAPI.createUser(formData);
+      const tenantId = user?.role === 'owner' ? selectedTenantId : user!.tenantId;
+      await userAPI.createUser({ ...formData, tenantId });
       setShowCreateForm(false);
-      setFormData({ email: '', password: '', role: 'engineer', tenantId: user?.tenantId || '' });
-      fetchUsers();
+      setFormData({ email: '', password: '', role: 'engineer', tenantId });
+      fetchUsers(tenantId);
     } catch (error) {
       console.error('Failed to create user:', error);
     }
@@ -57,7 +100,8 @@ export default function UsersPage() {
     if (confirm('Are you sure you want to delete this user?')) {
       try {
         await userAPI.deleteUser(userId);
-        fetchUsers();
+        const tenantId = user?.role === 'owner' ? selectedTenantId : user!.tenantId;
+        if (tenantId) fetchUsers(tenantId);
       } catch (error) {
         console.error('Failed to delete user:', error);
       }
@@ -91,6 +135,30 @@ export default function UsersPage() {
         </header>
 
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {user?.role === 'owner' && (
+            <div className="bg-white shadow rounded-lg mb-6 p-4">
+              <label htmlFor="tenantSelect" className="block text-sm font-medium text-gray-700 mb-2">
+                Select tenant to manage
+              </label>
+              <select
+                id="tenantSelect"
+                value={selectedTenantId}
+                onChange={(e) => {
+                  const tenantId = e.target.value;
+                  setSelectedTenantId(tenantId);
+                  router.replace(`/users?tenantId=${tenantId}`);
+                }}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              >
+                {tenants.map((tenant) => (
+                  <option key={tenant._id} value={tenant._id}>
+                    {tenant.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Create User Form */}
           {showCreateForm && (
             <div className="bg-white shadow rounded-lg mb-6">
@@ -188,12 +256,14 @@ export default function UsersPage() {
                       }`}>
                         {user.role}
                       </span>
-                      <button
-                        onClick={() => handleDeleteUser(user._id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {user.role !== 'owner' && (
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </li>

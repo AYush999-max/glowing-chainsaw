@@ -23,6 +23,8 @@ const userSchema = Joi.object({
 
 const tenantSchema = Joi.object({
   name: Joi.string().min(2).max(100).required(),
+  plan: Joi.string().valid('free', 'standard', 'premium'),
+  licenseKey: Joi.string().allow('', null),
   kycVerified: Joi.boolean(),
   licenseVerified: Joi.boolean(),
   documents: Joi.array().items(Joi.string())

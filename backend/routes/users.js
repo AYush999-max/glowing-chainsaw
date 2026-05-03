@@ -66,6 +66,10 @@ router.delete('/:id', auth, authorize('owner', 'admin'), async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
+    if (user.role === 'owner' && req.user.role !== 'owner') {
+      return res.status(403).json({ message: 'Only owners can delete owner accounts' });
+    }
+
     if (req.user.role === 'admin' && user.tenantId.toString() !== req.user.tenantId.toString()) {
       return res.status(403).json({ message: 'Forbidden' });
     }

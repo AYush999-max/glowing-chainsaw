@@ -67,8 +67,8 @@ export const tenantAPI = {
     api.put(`/tenants/${id}`, tenantData),
   verifyKYC: (id: string) =>
     api.post(`/tenants/${id}/verify-kyc`),
-  verifyLicense: (id: string) =>
-    api.post(`/tenants/${id}/verify-license`),
+  verifyLicense: (id: string, licenseKey?: string) =>
+    api.post(`/tenants/${id}/verify-license`, { licenseKey }),
 };
 
 export const dataAPI = {

@@ -17,8 +17,6 @@ export const metadata: Metadata = {
   title: "Glowing Chainsaw - Multi-Tenant Platform",
   description: "Multi-tenant digital platform for data management and workflows",
   manifest: "/manifest.json",
-  themeColor: "#2563eb",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -33,6 +31,14 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-status-bar-style": "default",
     "apple-mobile-web-app-title": "Glowing Chainsaw",
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({

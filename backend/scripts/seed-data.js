@@ -7,9 +7,14 @@ const bcrypt = require('bcryptjs');
 
 async function seedData() {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://admin:password123@mongodb:27017/glowing-chainsaw?authSource=admin';
-    console.log('🔌 Connecting to MongoDB...');
-    await mongoose.connect(mongoUri);
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://admin:password123@127.0.0.1:27017/glowing-chainsaw?authSource=admin';
+    console.log(' Connecting to MongoDB...');
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    });
 
     console.log('🗑️  Clearing existing data...');
     await User.deleteMany({});
@@ -22,12 +27,18 @@ async function seedData() {
     const tenants = await Tenant.insertMany([
       {
         name: 'Demo Company',
+        plan: 'free',
+        licenseKey: 'FREE-DEFAULT',
+        benefits: ['Basic support', 'Core platform access'],
         kycVerified: true,
         licenseVerified: true,
         documents: [],
       },
       {
         name: 'Tech Solutions Ltd',
+        plan: 'standard',
+        licenseKey: 'STD-1234',
+        benefits: ['Standard support', 'Enhanced reports'],
         kycVerified: true,
         licenseVerified: false,
         documents: [],
@@ -71,6 +82,27 @@ async function seedData() {
       tenantId: tenants[0]._id,
     });
 
+    const admin2 = await User.create({
+      email: 'admin2@tech.com',
+      password: await bcrypt.hash('password', 10),
+      role: 'admin',
+      tenantId: tenants[1]._id,
+    });
+
+    const manager2 = await User.create({
+      email: 'manager2@tech.com',
+      password: await bcrypt.hash('password', 10),
+      role: 'manager',
+      tenantId: tenants[1]._id,
+    });
+
+    const engineer3 = await User.create({
+      email: 'engineer3@tech.com',
+      password: await bcrypt.hash('password', 10),
+      role: 'engineer',
+      tenantId: tenants[1]._id,
+    });
+
     // Create sample data submissions
     console.log('📊 Creating sample data submissions...');
     const data = await Data.insertMany([
@@ -84,7 +116,25 @@ async function seedData() {
           category: 'Electronics',
           quality: 'High',
         },
-        images: ['image1.jpg', 'image2.jpg'],
+        images: ['image1.png', 'image2.png'],
+        imageMetadata: [
+          {
+            originalName: 'image1.png',
+            filename: 'image1.png',
+            path: 'uploads/image1.png',
+            mimetype: 'image/png',
+            size: 1024,
+            metadata: { Camera: 'Canon', Location: 'Floor 1', Tags: ['electronics', 'inventory'] }
+          },
+          {
+            originalName: 'image2.png',
+            filename: 'image2.png',
+            path: 'uploads/image2.png',
+            mimetype: 'image/png',
+            size: 2048,
+            metadata: { Camera: 'Nikon', Location: 'Floor 2', Tags: ['quality', 'inspection'] }
+          },
+        ],
         status: 'submitted',
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       },
@@ -99,6 +149,7 @@ async function seedData() {
           quality: 'Medium',
         },
         images: [],
+        imageMetadata: [],
         status: 'reviewed',
         createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
       },
@@ -112,7 +163,17 @@ async function seedData() {
           category: 'Pharmaceuticals',
           quality: 'High',
         },
-        images: ['image3.jpg'],
+        images: ['image3.png'],
+        imageMetadata: [
+          {
+            originalName: 'image3.png',
+            filename: 'image3.png',
+            path: 'uploads/image3.png',
+            mimetype: 'image/png',
+            size: 1536,
+            metadata: { Camera: 'Sony', Location: 'Lab 3', Tags: ['pharma', 'batch'] }
+          },
+        ],
         status: 'approved',
         createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
       },
@@ -127,8 +188,48 @@ async function seedData() {
           quality: 'High',
         },
         images: [],
+        imageMetadata: [],
         status: 'submitted',
         createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
+      },
+      {
+        userId: engineer3._id,
+        tenantId: tenants[1]._id,
+        formData: {
+          productName: 'Tech Product X',
+          quantity: 20,
+          location: 'Lab 5',
+          category: 'Software',
+          quality: 'High',
+        },
+        images: ['tech-image1.png'],
+        imageMetadata: [
+          {
+            originalName: 'tech-image1.png',
+            filename: 'tech-image1.png',
+            path: 'uploads/tech-image1.png',
+            mimetype: 'image/png',
+            size: 2048,
+            metadata: { Device: 'Laptop', Location: 'Lab 5', Tags: ['software', 'engineer'] }
+          },
+        ],
+        status: 'submitted',
+        createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
+      },
+      {
+        userId: engineer3._id,
+        tenantId: tenants[1]._id,
+        formData: {
+          productName: 'Tech Product Y',
+          quantity: 10,
+          location: 'Lab 7',
+          category: 'Hardware',
+          quality: 'Medium',
+        },
+        images: [],
+        imageMetadata: [],
+        status: 'reviewed',
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000),
       },
     ]);
 
@@ -176,6 +277,22 @@ async function seedData() {
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
       },
       {
+        userId: admin2._id,
+        tenantId: tenants[1]._id,
+        action: 'REVIEW_DATA',
+        resource: 'Data',
+        resourceId: data[4]._id,
+        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
+      },
+      {
+        userId: manager2._id,
+        tenantId: tenants[1]._id,
+        action: 'REVIEW_DATA',
+        resource: 'Data',
+        resourceId: data[5]._id,
+        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+      },
+      {
         userId: owner._id,
         tenantId: tenants[0]._id,
         action: 'VIEW_TENANTS',
@@ -186,15 +303,18 @@ async function seedData() {
 
     console.log('✅ Seed completed successfully!');
     console.log('\n📝 Test Credentials:');
-    console.log('  Owner:    owner@demo.com / password');
-    console.log('  Admin:    admin@demo.com / password');
-    console.log('  Manager:  manager@demo.com / password');
-    console.log('  Engineer: engineer1@demo.com / password');
-    console.log('  Engineer: engineer2@demo.com / password');
+    console.log('  Owner:      owner@demo.com / password');
+    console.log('  Admin:      admin@demo.com / password');
+    console.log('  Manager:    manager@demo.com / password');
+    console.log('  Engineer:   engineer1@demo.com / password');
+    console.log('  Engineer:   engineer2@demo.com / password');
+    console.log('  Admin:      admin2@tech.com / password');
+    console.log('  Manager:    manager2@tech.com / password');
+    console.log('  Engineer:   engineer3@tech.com / password');
     
     process.exit(0);
   } catch (error) {
-    console.error('❌ Seed failed:', error);
+    console.error(' Seed failed:', error);
     process.exit(1);
   }
 }

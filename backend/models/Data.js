@@ -2,7 +2,17 @@ const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
   formData: { type: mongoose.Schema.Types.Mixed, required: true }, // Flexible for different forms
-  images: [{ type: String }], // Paths or URLs
+  images: [{ type: String }], // Stored filenames
+  imageMetadata: [
+    {
+      originalName: String,
+      filename: String,
+      path: String,
+      mimetype: String,
+      size: Number,
+      metadata: mongoose.Schema.Types.Mixed,
+    }
+  ],
   tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   status: { type: String, enum: ['submitted', 'reviewed', 'approved', 'rejected'], default: 'submitted' },

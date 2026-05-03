@@ -6,14 +6,29 @@ import { useAuth } from '@/contexts/AuthContext';
 import { dataAPI } from '@/lib/api';
 import { CheckCircle, XCircle, Eye } from 'lucide-react';
 
+interface ImageMetadata {
+  originalName: string;
+  filename: string;
+  path: string;
+  mimetype: string;
+  size: number;
+  metadata: Record<string, any>;
+}
+
 interface DataItem {
   _id: string;
   formData: any;
   images: string[];
+  imageMetadata?: ImageMetadata[];
   status: string;
   userId: { email: string };
   createdAt: string;
   reviewComments?: string;
+}
+
+function getImageUrl(image: string) {
+  const fileName = image.includes('/') ? image.split('/').pop() : image;
+  return `/uploads/${fileName}`;
 }
 
 export default function DataPage() {
@@ -44,7 +59,11 @@ export default function DataPage() {
   const handleReview = async (dataId: string) => {
     try {
       if (reviewForm.status === 'approved') {
-        await dataAPI.approveData(dataId);
+        if (user?.role === 'admin') {
+          await dataAPI.approveData(dataId);
+        } else {
+          throw new Error('Only admins can approve data.');
+        }
       } else {
         await dataAPI.reviewData(dataId, reviewForm);
       }
@@ -108,6 +127,11 @@ export default function DataPage() {
                         <div className="text-sm text-gray-500">
                           Quantity: {item.formData.quantity} • Location: {item.formData.location}
                         </div>
+                        {item.imageMetadata && item.imageMetadata.length > 0 && (
+                          <div className="mt-1 text-sm text-gray-600">
+                            <span className="font-semibold text-gray-700">Metadata:</span> {item.imageMetadata.length} image(s) with extracted tags
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -141,22 +165,22 @@ export default function DataPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium">Product Details</h4>
+                      <h4 className="font-medium text-gray-900">Product Details</h4>
                       <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
                         <div>
-                          <dt className="text-sm font-medium text-gray-500">Product Name</dt>
+                          <dt className="text-sm font-medium text-gray-700">Product Name</dt>
                           <dd className="text-sm text-gray-900">{selectedData.formData.productName}</dd>
                         </div>
                         <div>
-                          <dt className="text-sm font-medium text-gray-500">Quantity</dt>
+                          <dt className="text-sm font-medium text-gray-700">Quantity</dt>
                           <dd className="text-sm text-gray-900">{selectedData.formData.quantity}</dd>
                         </div>
                         <div>
-                          <dt className="text-sm font-medium text-gray-500">Location</dt>
+                          <dt className="text-sm font-medium text-gray-700">Location</dt>
                           <dd className="text-sm text-gray-900">{selectedData.formData.location}</dd>
                         </div>
                         <div>
-                          <dt className="text-sm font-medium text-gray-500">Description</dt>
+                          <dt className="text-sm font-medium text-gray-700">Description</dt>
                           <dd className="text-sm text-gray-900">{selectedData.formData.description || 'N/A'}</dd>
                         </div>
                       </dl>
@@ -175,10 +199,34 @@ export default function DataPage() {
                           {selectedData.images.map((image, index) => (
                             <img
                               key={index}
-                              src={`http://localhost:5000/${image}`}
+                              src={getImageUrl(image)}
                               alt={`Image ${index + 1}`}
                               className="w-full h-24 object-cover rounded"
                             />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedData.imageMetadata && selectedData.imageMetadata.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-medium mb-2">Image metadata</h4>
+                        <div className="space-y-3 text-sm text-gray-700">
+                          {selectedData.imageMetadata.map((item, index) => (
+                            <div key={index} className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                              <p className="font-medium">{item.originalName}</p>
+                              <p>Type: {item.mimetype}</p>
+                              <p>Size: {item.size} bytes</p>
+                              {item.metadata && Object.keys(item.metadata).length > 0 ? (
+                                <div className="mt-2 text-xs text-gray-600">
+                                  {Object.entries(item.metadata).map(([key, value]) => (
+                                    <p key={key}><span className="font-semibold">{key}:</span> {String(value)}</p>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">No metadata found</p>
+                              )}
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -193,7 +241,7 @@ export default function DataPage() {
                           className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         >
                           <option value="reviewed">Mark as Reviewed</option>
-                          <option value="approved">Approve</option>
+                          {user?.role === 'admin' && <option value="approved">Approve</option>}
                           <option value="rejected">Reject</option>
                         </select>
                         <textarea

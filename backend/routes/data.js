@@ -1,5 +1,7 @@
 const express = require('express');
+const fs = require('fs');
 const multer = require('multer');
+const exif = require('exif-parser');
 const Data = require('../models/Data');
 const { auth, authorize } = require('../middleware/auth');
 const auditLog = require('../middleware/audit');
@@ -9,15 +11,38 @@ const router = express.Router();
 // Multer for file uploads
 const upload = multer({ dest: 'uploads/' });
 
+function extractExif(filePath) {
+  try {
+    const buffer = fs.readFileSync(filePath);
+    const parser = exif.create(buffer);
+    const result = parser.parse();
+    return result.tags || {};
+  } catch (err) {
+    return {};
+  }
+}
+
 // Submit data (engineers only, for their tenant)
 router.post('/', auth, authorize('engineer'), auditLog('SUBMIT_DATA', 'Data'), upload.array('images'), async (req, res) => {
   try {
     const { formData } = req.body;
-    const images = req.files ? req.files.map(file => file.path) : [];
+    const imageMetadata = req.files
+      ? req.files.map((file) => ({
+          originalName: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size,
+          metadata: extractExif(file.path),
+        }))
+      : [];
+
+    const images = imageMetadata.map((item) => item.filename);
 
     const data = new Data({
       formData: JSON.parse(formData),
       images,
+      imageMetadata,
       tenantId: req.user.tenantId,
       userId: req.user.id
     });
@@ -57,8 +82,8 @@ router.get('/my/submissions', auth, authorize('engineer'), async (req, res) => {
   }
 });
 
-// Review data (managers only)
-router.put('/:id/review', auth, authorize('manager'), auditLog('REVIEW_DATA', 'Data'), async (req, res) => {
+// Review data (managers and admins)
+router.put('/:id/review', auth, authorize('manager', 'admin'), auditLog('REVIEW_DATA', 'Data'), async (req, res) => {
   try {
     const { status, comments } = req.body;
     const data = await Data.findById(req.params.id);

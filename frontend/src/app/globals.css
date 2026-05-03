@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -14,8 +14,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f8fafc;
+    --foreground: #0f172a;
   }
 }
 
@@ -23,4 +23,39 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+input,
+textarea,
+select,
+button,
+optgroup,
+option,
+label,
+span,
+p,
+div,
+section,
+article,
+header,
+footer,
+a,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li {
+  color: var(--foreground) !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: #006aff !important;
+}
+
+button {
+  color: var(--foreground) !important;
 }

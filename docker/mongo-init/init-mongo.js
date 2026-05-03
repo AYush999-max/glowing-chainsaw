@@ -30,6 +30,9 @@ db.auditlogs.createIndex({ "timestamp": -1 });
 // Insert sample tenant
 db.tenants.insertOne({
   name: "Demo Company",
+  plan: "free",
+  licenseKey: "FREE-DEFAULT",
+  benefits: ["Basic support", "Core platform access"],
   kycVerified: true,
   licenseVerified: true,
   documents: [],
